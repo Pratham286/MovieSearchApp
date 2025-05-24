@@ -1,4 +1,11 @@
-import { Box, Typography, CircularProgress, Container } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Container,
+  Button,
+  Stack,
+} from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -8,18 +15,27 @@ export default function MovieList() {
   const location = useLocation();
   const { movieTitle, movieType, movieYear } = location.state;
 
-  const query = `s=${movieTitle}${movieYear ? `&y=${movieYear}` : ''}${movieType !== 'any' ? `&type=${movieType}` : ''}`;
+  const [page, setPage] = useState(1);
   const [content, setContent] = useState({});
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const query = `s=${movieTitle}${movieYear ? `&y=${movieYear}` : ''}${
+    movieType !== 'any' ? `&type=${movieType}` : ''
+  }&page=${page}`;
+
   useEffect(() => {
+    setIsLoaded(false); // Reset loading for each page
     axios
       .get(`https://omdbapi.com/?${query}&apikey=136399a2`)
       .then((res) => {
         setContent(res.data);
         setIsLoaded(true);
       });
-  }, []);
+  }, [query]);
+
+  const totalResults = parseInt(content.totalResults || '0');
+  const totalPages = Math.ceil(totalResults / 10);
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   if (!isLoaded) {
     return (
@@ -74,6 +90,26 @@ export default function MovieList() {
           </Typography>
         )}
       </Box>
+
+      {totalPages > 1 && (
+        <Stack
+          direction="row"
+          spacing={1}
+          justifyContent="center"
+          mt={4}
+          flexWrap="wrap"
+        >
+          {pageNumbers.map((num) => (
+            <Button
+              key={num}
+              variant={num === page ? 'contained' : 'outlined'}
+              onClick={() => setPage(num)}
+            >
+              {num}
+            </Button>
+          ))}
+        </Stack>
+      )}
     </Container>
   );
 }
